@@ -10,7 +10,6 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/debugfs.h>
 #include <linux/export.h>
 #include <linux/fs.h>
 #include <linux/if_ether.h>
@@ -61,18 +60,22 @@
 			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
 		IPA_IPC_LOGGING(ipa_get_ipc_logbuf_low(), \
 			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
-	} while (0)
-
-#define IPA_GSB_MAX_MSG_LEN 512
-static char dbg_buff[IPA_GSB_MAX_MSG_LEN];
+		} while (0)
 
 #define IPA_GSB_SKB_HEADROOM 256
 #define IPA_GSB_SKB_DUMMY_HEADER 42
 #define IPA_GSB_AGGR_BYTE_LIMIT 14
 #define IPA_GSB_AGGR_TIME_LIMIT 1
 
+#ifdef CONFIG_DEBUG_FS
+#include <linux/debugfs.h>
+
+#define IPA_GSB_MAX_MSG_LEN 512
+static char dbg_buff[IPA_GSB_MAX_MSG_LEN];
+
 static struct dentry *dent;
 static struct dentry *dfile_stats;
+#endif /* CONFIG_DEBUG_FS */
 
 /**
  * struct stats - driver statistics,

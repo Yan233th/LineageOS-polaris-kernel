@@ -640,7 +640,7 @@ static void _sde_crtc_deinit_events(struct sde_crtc *sde_crtc)
 		return;
 }
 
-static int _sde_debugfs_fps_status_show(struct seq_file *s, void *data)
+static int __maybe_unused _sde_debugfs_fps_status_show(struct seq_file *s, void *data)
 {
 	struct sde_crtc *sde_crtc;
 	u64 fps_int, fps_float;
@@ -678,7 +678,7 @@ static int _sde_debugfs_fps_status_show(struct seq_file *s, void *data)
 }
 
 
-static int _sde_debugfs_fps_status(struct inode *inode, struct file *file)
+static int __maybe_unused _sde_debugfs_fps_status(struct inode *inode, struct file *file)
 {
 	return single_open(file, _sde_debugfs_fps_status_show,
 			inode->i_private);

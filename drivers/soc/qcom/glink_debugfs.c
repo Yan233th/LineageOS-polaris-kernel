@@ -93,7 +93,9 @@ static const struct file_operations debug_ops = {
 	.llseek = seq_lseek,
 };
 #endif
+#if defined(CONFIG_DEBUG_FS)
 static void glink_dfs_dent_rm_worker(struct work_struct *work);
+#endif
 
 /**
  * glink_get_ss_enum_string() - get the name of the subsystem based on enum

@@ -3134,6 +3134,11 @@ static inline void clk_debug_reparent(struct clk_core *core,
 static inline void clk_debug_unregister(struct clk_core *core)
 {
 }
+
+void clock_debug_print_enabled(bool print_parent)
+{
+}
+EXPORT_SYMBOL_GPL(clock_debug_print_enabled);
 #endif
 
 /**
