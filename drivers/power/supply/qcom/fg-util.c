@@ -970,26 +970,28 @@ int fg_debugfs_create(struct fg_chip *chip)
 {
 	int rc;
 
+	if (!IS_ENABLED(CONFIG_DEBUG_FS)) {
+		chip->dfs_root = NULL;
+		return 0;
+	}
+
 	pr_debug("Creating debugfs file-system\n");
 	chip->dfs_root = debugfs_create_dir("fg", NULL);
 	if (IS_ERR_OR_NULL(chip->dfs_root)) {
-		if (PTR_ERR(chip->dfs_root) == -ENODEV)
-			pr_err("debugfs is not enabled in the kernel\n");
-		else
-			pr_err("error creating fg dfs root rc=%ld\n",
-			       (long)chip->dfs_root);
-		return -ENODEV;
+		pr_warn("skip fg debugfs root, rc=%ld\n", PTR_ERR(chip->dfs_root));
+		chip->dfs_root = NULL;
+		return 0;
 	}
 
 	rc = fg_sram_debugfs_create(chip);
 	if (rc < 0) {
-		pr_err("failed to create sram dfs rc=%d\n", rc);
+		pr_warn("failed to create sram debugfs rc=%d\n", rc);
 		goto err_remove_fs;
 	}
 
 	if (!debugfs_create_file("alg_flags", 0400, chip->dfs_root, chip,
 				 &fg_alg_flags_fops)) {
-		pr_err("failed to create alg_flags file\n");
+		pr_warn("failed to create alg_flags debugfs file\n");
 		goto err_remove_fs;
 	}
 
@@ -997,7 +999,8 @@ int fg_debugfs_create(struct fg_chip *chip)
 
 err_remove_fs:
 	debugfs_remove_recursive(chip->dfs_root);
-	return -ENOMEM;
+	chip->dfs_root = NULL;
+	return 0;
 }
 
 void fg_stay_awake(struct fg_chip *chip, int awake_reason)

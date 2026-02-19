@@ -1950,7 +1950,7 @@ int dsi_ctrl_drv_init(struct dsi_ctrl *dsi_ctrl, struct dentry *parent)
 {
 	int rc = 0;
 
-	if (!dsi_ctrl || !parent) {
+	if (!dsi_ctrl) {
 		pr_err("Invalid params\n");
 		return -EINVAL;
 	}
@@ -1962,11 +1962,20 @@ int dsi_ctrl_drv_init(struct dsi_ctrl *dsi_ctrl, struct dentry *parent)
 		goto error;
 	}
 
-	rc = dsi_ctrl_debugfs_init(dsi_ctrl, parent);
-	if (rc) {
-		pr_err("[DSI_%d] failed to init debug fs, rc=%d\n",
-		       dsi_ctrl->cell_index, rc);
-		goto error;
+	if (IS_ENABLED(CONFIG_DEBUG_FS)) {
+		if (!parent) {
+			rc = -EINVAL;
+			pr_err("[DSI_%d] invalid debugfs parent, rc=%d\n",
+			       dsi_ctrl->cell_index, rc);
+			goto error;
+		}
+
+		rc = dsi_ctrl_debugfs_init(dsi_ctrl, parent);
+		if (rc) {
+			pr_err("[DSI_%d] failed to init debug fs, rc=%d\n",
+			       dsi_ctrl->cell_index, rc);
+			goto error;
+		}
 	}
 
 error:
@@ -1993,9 +2002,11 @@ int dsi_ctrl_drv_deinit(struct dsi_ctrl *dsi_ctrl)
 
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
-	rc = dsi_ctrl_debugfs_deinit(dsi_ctrl);
-	if (rc)
-		pr_err("failed to release debugfs root, rc=%d\n", rc);
+	if (IS_ENABLED(CONFIG_DEBUG_FS)) {
+		rc = dsi_ctrl_debugfs_deinit(dsi_ctrl);
+		if (rc)
+			pr_err("failed to release debugfs root, rc=%d\n", rc);
+	}
 
 	rc = dsi_ctrl_buffer_deinit(dsi_ctrl);
 	if (rc)
