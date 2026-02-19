@@ -1617,6 +1617,11 @@ static int dsi_display_debugfs_init(struct dsi_display *display)
 	char name[MAX_NAME_SIZE];
 	int i;
 
+	if (!IS_ENABLED(CONFIG_DEBUG_FS)) {
+		display->root = NULL;
+		return 0;
+	}
+
 	dir = debugfs_create_dir(display->name, NULL);
 	if (IS_ERR_OR_NULL(dir)) {
 		rc = PTR_ERR(dir);

@@ -171,6 +171,9 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 	bool ok = false;
 	struct dentry *dir = NULL;
 
+	if (!IS_ENABLED(CONFIG_DEBUG_FS))
+		return NULL;
+
 	dir = debugfs_create_dir("msm_vidc", NULL);
 	if (IS_ERR_OR_NULL(dir)) {
 		dir = NULL;
@@ -218,8 +221,8 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 	return dir;
 
 failed_create_dir:
-	if (dir)
-		debugfs_remove_recursive(vidc_driver->debugfs_root);
+	if (!IS_ERR_OR_NULL(dir))
+		debugfs_remove_recursive(dir);
 
 	return NULL;
 }
@@ -230,6 +233,9 @@ struct dentry *msm_vidc_debugfs_init_core(struct msm_vidc_core *core,
 	struct dentry *dir = NULL;
 	char debugfs_name[MAX_DEBUGFS_NAME];
 
+	if (!IS_ENABLED(CONFIG_DEBUG_FS) || IS_ERR_OR_NULL(parent))
+		return NULL;
+
 	if (!core) {
 		dprintk(VIDC_ERR, "Invalid params, core: %pK\n", core);
 		goto failed_create_dir;
@@ -237,17 +243,18 @@ struct dentry *msm_vidc_debugfs_init_core(struct msm_vidc_core *core,
 
 	snprintf(debugfs_name, MAX_DEBUGFS_NAME, "core%d", core->id);
 	dir = debugfs_create_dir(debugfs_name, parent);
-	if (!dir) {
+	if (IS_ERR_OR_NULL(dir)) {
 		dprintk(VIDC_ERR, "Failed to create debugfs for msm_vidc\n");
 		goto failed_create_dir;
 	}
 
-	if (!debugfs_create_file("info", 0444, dir, core, &core_info_fops)) {
+	if (IS_ERR_OR_NULL(debugfs_create_file("info", 0444, dir, core,
+					&core_info_fops))) {
 		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
-	if (!debugfs_create_file("trigger_ssr", 0200,
-			dir, core, &ssr_fops)) {
+	if (IS_ERR_OR_NULL(debugfs_create_file("trigger_ssr", 0200, dir,
+					core, &ssr_fops))) {
 		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
@@ -440,6 +447,9 @@ struct dentry *msm_vidc_debugfs_init_inst(struct msm_vidc_inst *inst,
 	char debugfs_name[MAX_DEBUGFS_NAME];
 	struct core_inst_pair *idata = NULL;
 
+	if (!IS_ENABLED(CONFIG_DEBUG_FS) || IS_ERR_OR_NULL(parent))
+		return NULL;
+
 	if (!inst) {
 		dprintk(VIDC_ERR, "Invalid params, inst: %pK\n", inst);
 		goto exit;
@@ -456,14 +466,14 @@ struct dentry *msm_vidc_debugfs_init_inst(struct msm_vidc_inst *inst,
 	idata->inst = inst;
 
 	dir = debugfs_create_dir(debugfs_name, parent);
-	if (!dir) {
+	if (IS_ERR_OR_NULL(dir)) {
 		dprintk(VIDC_ERR, "Failed to create debugfs for msm_vidc\n");
 		goto failed_create_dir;
 	}
 
 	info = debugfs_create_file("info", 0444, dir,
 			idata, &inst_info_fops);
-	if (!info) {
+	if (IS_ERR_OR_NULL(info)) {
 		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
 		goto failed_create_file;
 	}
@@ -485,11 +495,14 @@ void msm_vidc_debugfs_deinit_inst(struct msm_vidc_inst *inst)
 {
 	struct dentry *dentry = NULL;
 
-	if (!inst || !inst->debugfs_root)
+	if (!IS_ENABLED(CONFIG_DEBUG_FS))
+		return;
+
+	if (!inst || IS_ERR_OR_NULL(inst->debugfs_root))
 		return;
 
 	dentry = inst->debugfs_root;
-	if (dentry->d_inode) {
+	if (!IS_ERR_OR_NULL(dentry) && dentry->d_inode) {
 		dprintk(VIDC_INFO, "Destroy %pK\n", dentry->d_inode->i_private);
 		kfree(dentry->d_inode->i_private);
 		dentry->d_inode->i_private = NULL;
@@ -547,4 +560,3 @@ void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 		break;
 	}
 }
-
