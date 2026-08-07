@@ -12,6 +12,7 @@ POLARIS_GCC64_DIR=${POLARIS_GCC64_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/android_prebu
 POLARIS_GCC32_DIR=${POLARIS_GCC32_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9"}
 POLARIS_GCC64_VIEW_DIR=${POLARIS_GCC64_VIEW_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/polaris-build-tools/aarch64-linux-android-4.9"}
 POLARIS_MKBOOTIMG_DIR=${POLARIS_MKBOOTIMG_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/mkbootimg"}
+POLARIS_KCFLAGS=${POLARIS_KCFLAGS:--O3}
 
 polaris_die() {
     printf 'error: %s\n' "$*" >&2
@@ -29,6 +30,9 @@ Options:
   --out-dir PATH      Kernel object output directory
   --config-only       Generate and validate .config without compiling
   -h, --help          Show this help
+
+Environment:
+  POLARIS_KCFLAGS     Additional kernel C flags (default: -O3)
 EOF
 }
 
@@ -185,6 +189,7 @@ polaris_prepare_environment() {
         AR="$POLARIS_CLANG_DIR/bin/llvm-ar"
         LLVM=1
         LLVM_IAS=1
+        KCFLAGS="$POLARIS_KCFLAGS"
         CLANG_TRIPLE=aarch64-linux-gnu-
         CROSS_COMPILE="$gcc64_prefix"
         CROSS_COMPILE_ARM32="$gcc32_prefix"
