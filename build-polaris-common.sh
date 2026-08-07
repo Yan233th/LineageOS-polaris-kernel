@@ -10,6 +10,10 @@ POLARIS_CLANG_REPO_DIR=${POLARIS_CLANG_REPO_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/and
 POLARIS_CLANG_DIR=${POLARIS_CLANG_DIR:-"$POLARIS_CLANG_REPO_DIR/$POLARIS_CLANG_VERSION"}
 POLARIS_GCC64_DIR=${POLARIS_GCC64_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9"}
 POLARIS_GCC32_DIR=${POLARIS_GCC32_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9"}
+POLARIS_GCC64_COMMIT=${POLARIS_GCC64_COMMIT:-5e030eafe024784a73cdf47e6936ac0dbfc763dc}
+POLARIS_GCC64_REPOSITORY=${POLARIS_GCC64_REPOSITORY:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git}
+POLARIS_GCC32_COMMIT=${POLARIS_GCC32_COMMIT:-111258a10e017f067b27e6cfcea7619d753f3309}
+POLARIS_GCC32_REPOSITORY=${POLARIS_GCC32_REPOSITORY:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git}
 POLARIS_GCC64_VIEW_DIR=${POLARIS_GCC64_VIEW_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/polaris-build-tools/aarch64-linux-android-4.9"}
 POLARIS_MKBOOTIMG_DIR=${POLARIS_MKBOOTIMG_DIR:-"$POLARIS_KERNEL_BUILD_ROOT/mkbootimg"}
 POLARIS_KCFLAGS=${POLARIS_KCFLAGS:--O3}
@@ -142,6 +146,10 @@ polaris_prepare_environment() {
     local clang_commit
     local clang_remote
     local clang_version
+    local gcc64_commit
+    local gcc64_remote
+    local gcc32_commit
+    local gcc32_remote
 
     [[ -x "$clang_bin" ]] || polaris_die "clang not found: $clang_bin"
     [[ -x "$POLARIS_CLANG_DIR/bin/ld.lld" ]] || polaris_die "ld.lld not found"
@@ -165,6 +173,20 @@ polaris_prepare_environment() {
     [[ -z "$(git -C "$POLARIS_CLANG_REPO_DIR" status --porcelain)" ]] || polaris_die "clang repository is dirty"
     clang_version=$("$clang_bin" --version | head -n 1)
     [[ "$clang_version" == *"based on r536225"* && "$clang_version" == *"clang version 19.0.1"* ]] || polaris_die "unexpected clang version: $clang_version"
+
+    [[ -d "$POLARIS_GCC64_DIR/.git" ]] || polaris_die "64-bit GCC repository metadata is missing"
+    gcc64_commit=$(git -C "$POLARIS_GCC64_DIR" rev-parse HEAD)
+    [[ "$gcc64_commit" == "$POLARIS_GCC64_COMMIT" ]] || polaris_die "unexpected 64-bit GCC commit: $gcc64_commit"
+    gcc64_remote=$(git -C "$POLARIS_GCC64_DIR" remote get-url origin)
+    [[ "$gcc64_remote" == "$POLARIS_GCC64_REPOSITORY" ]] || polaris_die "unexpected 64-bit GCC repository: $gcc64_remote"
+    [[ -z "$(git -C "$POLARIS_GCC64_DIR" status --porcelain)" ]] || polaris_die "64-bit GCC repository is dirty"
+
+    [[ -d "$POLARIS_GCC32_DIR/.git" ]] || polaris_die "32-bit GCC repository metadata is missing"
+    gcc32_commit=$(git -C "$POLARIS_GCC32_DIR" rev-parse HEAD)
+    [[ "$gcc32_commit" == "$POLARIS_GCC32_COMMIT" ]] || polaris_die "unexpected 32-bit GCC commit: $gcc32_commit"
+    gcc32_remote=$(git -C "$POLARIS_GCC32_DIR" remote get-url origin)
+    [[ "$gcc32_remote" == "$POLARIS_GCC32_REPOSITORY" ]] || polaris_die "unexpected 32-bit GCC repository: $gcc32_remote"
+    [[ -z "$(git -C "$POLARIS_GCC32_DIR" status --porcelain)" ]] || polaris_die "32-bit GCC repository is dirty"
 
     polaris_prepare_gcc64_view
     [[ -x "${gcc64_prefix}gcc" ]] || polaris_die "64-bit GCC view is incomplete"
@@ -217,8 +239,12 @@ polaris_write_toolchain_manifest() {
         printf 'clang_commit=%s\n' "$(git -C "$POLARIS_CLANG_REPO_DIR" rev-parse HEAD)"
         printf 'clang_version=%s\n' "$clang_version"
         printf 'lld_version=%s\n' "$lld_version"
+        printf 'gcc64_repository=%s\n' "$POLARIS_GCC64_REPOSITORY"
+        printf 'gcc64_commit=%s\n' "$(git -C "$POLARIS_GCC64_DIR" rev-parse HEAD)"
         printf 'gcc64_binutils=%s\n' "$("$POLARIS_GCC64_DIR/bin/aarch64-linux-android-ld" --version | head -n 1)"
         printf 'gcc64_view=%s\n' "$POLARIS_GCC64_VIEW_DIR"
+        printf 'gcc32_repository=%s\n' "$POLARIS_GCC32_REPOSITORY"
+        printf 'gcc32_commit=%s\n' "$(git -C "$POLARIS_GCC32_DIR" rev-parse HEAD)"
         printf 'gcc32_binutils=%s\n' "$("$POLARIS_GCC32_DIR/bin/arm-linux-androidkernel-ld" --version | head -n 1)"
         if [[ "$POLARIS_VARIANT" == ksu ]]; then
             printf 'kernelsu_repository=%s\n' "$KERNELSU_REPOSITORY"

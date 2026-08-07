@@ -36,6 +36,8 @@ git -C "$SCRIPT_ROOT" worktree add --detach "$KSU_WORKTREE" HEAD
 
 git clone --depth 1 --branch "$KERNELSU_TAG" --single-branch "$KERNELSU_REPOSITORY" "$KSU_WORKTREE/KernelSU"
 [[ "$(git -C "$KSU_WORKTREE/KernelSU" rev-parse HEAD)" == "$KERNELSU_COMMIT" ]] || polaris_die "unexpected KernelSU commit"
+[[ "$(git -C "$KSU_WORKTREE/KernelSU" remote get-url origin)" == "$KERNELSU_REPOSITORY" ]] || polaris_die "unexpected KernelSU repository"
+[[ -z "$(git -C "$KSU_WORKTREE/KernelSU" status --porcelain)" ]] || polaris_die "KernelSU repository is dirty"
 
 [[ ! -e "$KSU_WORKTREE/drivers/kernelsu" ]] || polaris_die "drivers/kernelsu already exists"
 [[ "$(tail -n 1 "$KSU_WORKTREE/drivers/Kconfig")" == endmenu ]] || polaris_die "unexpected drivers/Kconfig layout"
